@@ -9,9 +9,12 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class AutoSave
 {
+    // 자동 저장 간격 (분 단위)
     private const int SaveIntervalMinutes = 5;
+    // 다음 자동 저장 시각 (초 단위)
     private static double _nextSaveTime;
 
+    // 자동저장
     static AutoSave()
     {
         _nextSaveTime = EditorApplication.timeSinceStartup + (SaveIntervalMinutes * 60);
@@ -19,6 +22,7 @@ public static class AutoSave
         EditorApplication.playModeStateChanged += OnPlayModeChanged;
     }
 
+    // 일정 시간 간격으로 자동 저장
     private static void OnEditorUpdate()
     {
         if (Application.isPlaying || EditorApplication.isCompiling) return;
@@ -30,6 +34,7 @@ public static class AutoSave
         }
     }
 
+    // 에디터 플레이 시 저장
     private static void OnPlayModeChanged(PlayModeStateChange state)
     {
         if (state == PlayModeStateChange.ExitingEditMode)
@@ -38,6 +43,7 @@ public static class AutoSave
         }
     }
 
+    // 저장 기능 함수
     private static void SaveActiveScenesAndAssets()
     {
         EditorSceneManager.SaveOpenScenes();
