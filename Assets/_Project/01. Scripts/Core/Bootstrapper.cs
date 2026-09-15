@@ -7,7 +7,7 @@ public static class Bootstrapper
 {
     // 첫 번째 씬이 로드되기 전(Awake보다 앞선 시점)에 런타임 엔진에 의해 자동 실행
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    public static void Execute()
+    public static void InitializeBeforeSceneLoad()
     {
         // GameManager 인스턴스가 아직 씬에 없는 경우에만 프리팹 로드 시도
         if (Object.FindFirstObjectByType<GameManager>() == null)
