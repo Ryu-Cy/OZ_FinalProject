@@ -4,7 +4,7 @@
 public enum ConsumableType
 {
     None = 0,
-    HealHp,
-    GrantSoul,
+    HealHp,     // 체력 회복 아이템
+    GrantSoul,  // 소울(재화) 획득 아이템
     Length
 }

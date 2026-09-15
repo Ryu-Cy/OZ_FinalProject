@@ -4,8 +4,8 @@
 public enum EquipmentType
 {
     None = 0,
-    Weapon,
-    Shield,
-    Armor,
+    Weapon,     // 무기
+    Shield,     // 방패
+    Armor,      // 방어구
     Length
 }
