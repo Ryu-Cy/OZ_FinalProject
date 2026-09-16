@@ -8,6 +8,12 @@ public class PlayerStateMachine : StateMachine
     // 개별 상태 캐싱
     public PlayerIdleState IdleState { get; }
     public PlayerMoveState MoveState { get; }
+    public PlayerSprintState SprintState { get; }
+    public PlayerDodgeState DodgeState { get; }
+    public PlayerAttackState AttackState { get; }
+
+    // 프로퍼티
+    public PlayerStateType CurrentStateType => (CurrentState as PlayerBaseState)?.StateType ?? PlayerStateType.None;
 
     /// <summary>
     /// 상태 머신 생성자
@@ -17,8 +23,10 @@ public class PlayerStateMachine : StateMachine
     {
         Player = player;
 
-        // 상태 할당
         IdleState = new PlayerIdleState(this);
         MoveState = new PlayerMoveState(this);
+        SprintState = new PlayerSprintState(this);
+        DodgeState = new PlayerDodgeState(this);
+        AttackState = new PlayerAttackState(this);
     }
 }

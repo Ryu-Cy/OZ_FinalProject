@@ -1,13 +1,13 @@
 using UnityEngine;
 
 /// <summary>
-/// 플레이어 기본 이동(Move) 상태
+/// 플레이어 전력질주(Sprint) 상태
 /// </summary>
-public class PlayerMoveState : PlayerBaseState
+public class PlayerSprintState : PlayerBaseState
 {
-    public override PlayerStateType StateType => PlayerStateType.Move;
+    public override PlayerStateType StateType => PlayerStateType.Sprint;
 
-    public PlayerMoveState(PlayerStateMachine stateMachine) : base(stateMachine) { }
+    public PlayerSprintState(PlayerStateMachine stateMachine) : base(stateMachine) { }
 
     /// <summary>
     /// 상태 진입
@@ -29,17 +29,17 @@ public class PlayerMoveState : PlayerBaseState
 
         Vector2 input = player.InputController.InputVector;
 
-        // 이동 입력이 멈추면 Idle로 전환
+        // 이동 입력 종료 시 Idle로 전환
         if (input.sqrMagnitude <= 0.01f)
         {
             stateMachine.ChangeState(stateMachine.IdleState);
             return;
         }
 
-        // LShift 누름 감지 시 Sprint로 전환
-        if (player.InputController.IsSprintPressed)
+        // Sprint 입력 종료 시 Move로 전환
+        if (!player.InputController.IsSprintPressed)
         {
-            stateMachine.ChangeState(stateMachine.SprintState);
+            stateMachine.ChangeState(stateMachine.MoveState);
         }
     }
 
@@ -55,13 +55,9 @@ public class PlayerMoveState : PlayerBaseState
 
         Vector3 moveDirection = new Vector3(input.x, 0.0f, input.y).normalized;
 
-        // 조작 방식에 따른 속도 및 애니메이션 값 처리
-        float targetSpeed = player.InputController.IsWalkPressed ? player.WalkSpeed : player.RunSpeed;
-        float animSpeedValue = player.InputController.IsWalkPressed ? 0.5f : 1.0f;
-
-        player.SetHorizontalVelocity(moveDirection * targetSpeed);
+        player.SetHorizontalVelocity(moveDirection * player.SprintSpeed);
         player.RotateTowards(moveDirection);
-        player.UpdateAnimationSpeed(animSpeedValue);
+        player.UpdateAnimationSpeed(1.5f);
     }
 
     /// <summary>

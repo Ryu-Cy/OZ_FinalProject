@@ -5,36 +5,48 @@ using UnityEngine;
 /// </summary>
 public class PlayerIdleState : PlayerBaseState
 {
-    /// <summary>
-    /// Idle 상태 생성자
-    /// </summary>
-    /// <param name="stateMachine">플레이어 상태 머신</param>
+    public override PlayerStateType StateType => PlayerStateType.Idle;
+
     public PlayerIdleState(PlayerStateMachine stateMachine) : base(stateMachine) { }
 
     /// <summary>
     /// 상태 진입
+    /// 정지 처리
     /// </summary>
     public override void Enter()
     {
         base.Enter();
+
+        player.SetHorizontalVelocity(Vector3.zero);
+        player.UpdateAnimationSpeed(0.0f);
+
+        // 회피 및 공격 입력 이벤트 구독
+        player.InputController.OnDodgeTriggered += HandleDodge;
+        player.InputController.OnAttackTriggered += HandleAttack;
     }
 
     /// <summary>
-    /// 상태 로직
-    /// 방향 입력 시 MoveState로 전환
+    /// 상태 입력 처리
+    /// </summary>
+    public override void HandleInput()
+    {
+        base.HandleInput();
+
+        // 이동 입력 감지 시 Move 상태로 전환
+        if (player.InputController.InputVector.sqrMagnitude > 0.01f)
+        {
+            stateMachine.ChangeState(stateMachine.MoveState);
+        }
+    }
+
+    /// <summary>
+    /// 상태 업데이트
     /// </summary>
     public override void Update()
     {
         base.Update();
 
-        // 애니메이터 파라미터 조절
         player.UpdateAnimationSpeed(0.0f);
-
-        // 입력이 감지되면 MoveState로 전환
-        if (player.InputVector.sqrMagnitude > 0.01f)
-        {
-            stateMachine.ChangeState(stateMachine.MoveState);
-        }
     }
 
     /// <summary>
@@ -43,5 +55,8 @@ public class PlayerIdleState : PlayerBaseState
     public override void Exit()
     {
         base.Exit();
+
+        player.InputController.OnDodgeTriggered -= HandleDodge;
+        player.InputController.OnAttackTriggered -= HandleAttack;
     }
 }
