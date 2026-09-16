@@ -14,7 +14,7 @@ public class PlayerAttackState : PlayerBaseState
     private AttackComboType currentCombo = AttackComboType.None;
 
     // 이벤트 기반 상태 플래그
-    private bool isComboWindowOpen;   // Anim_AttackHitEnd ~ Anim_ComboInputEnd 구간
+    private bool isComboWindowOpen;   // AttackHitEnd ~ ComboInputEnd 구간
     private bool hasComboReserved;    // 유효 윈도우 내 클릭 예약 여부
     private bool isAnimationStarted;
     private float stateTimer;
@@ -67,7 +67,7 @@ public class PlayerAttackState : PlayerBaseState
             isAnimationStarted = true;
         }
 
-        // 트랜지션 초기 완충 시간(0.08초) 경과 후 탈출 감지
+        // 트랜지션 초기 완충 시간 경과 후 탈출 감지
         if (stateTimer > 0.08f && isAnimationStarted)
         {
             // 모션이 끝나서 애니메이터가 Move상태로 전환되면 탈출
@@ -81,7 +81,7 @@ public class PlayerAttackState : PlayerBaseState
                 }
             }
 
-            // 트랜지션 없이 모션 자체가 100% 끝났을 때 즉시 탈출
+            // 트랜지션 없이 모션dl 끝났을 때 즉시 탈출
             // 트렌지션 문제가 생겼을 때 탈출 용
             if (currentInfo.normalizedTime >= 1.0f)
             {
@@ -140,6 +140,7 @@ public class PlayerAttackState : PlayerBaseState
         if (isComboWindowOpen && !hasComboReserved)
         {
             hasComboReserved = true;
+            isComboWindowOpen = false;
         }
     }
 
