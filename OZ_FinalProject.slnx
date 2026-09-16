@@ -1,4 +1,12 @@
 ﻿<Solution>
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Unity.Toonshader.Editor.csproj" />
+  <Project Path="Unity.FilmInternalUtilities.csproj" />
+  <Project Path="Unity.FilmInternalUtilities.Editor.csproj" />
+  <Project Path="Unity.FilmInternalUtilities.EditorTests.csproj" />
+  <Project Path="Unity.Toonshader.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="Unity.FilmInternalUtilities.Tests.csproj" />
+  <Project Path="Unity.ToonShader.EditorTests.csproj" />
+  <Project Path="Unity.ToonShader.Tests.csproj" />
 </Solution>
