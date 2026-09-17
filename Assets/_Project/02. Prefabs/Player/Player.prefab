@@ -637,7 +637,8 @@ MonoBehaviour:
   animator: {fileID: 8434867024662614667}
   inputController: {fileID: 0}
   animationEventController: {fileID: 0}
-  weaponCollider: {fileID: 0}
+  weaponParent: {fileID: 0}
+  currentWeapon: {fileID: 0}
   walkSpeed: 2.5
   runSpeed: 5
   sprintSpeed: 8
@@ -4977,7 +4978,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 6597300714074657319, guid: b6e0ca8de531d9f4a9b3c34cb7ed024f, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b6e0ca8de531d9f4a9b3c34cb7ed024f, type: 3}
@@ -5058,11 +5060,61 @@ PrefabInstance:
       propertyPath: m_Sources.Array.data[2].sourceTransform
       value: 
       objectReference: {fileID: 1737519558732326370}
+    - target: {fileID: 8202804942734134199, guid: 830186b9bfa8fe94bb4b1fa52e5bdc40, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 449491381894955428, guid: 830186b9bfa8fe94bb4b1fa52e5bdc40, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8202804942734134199, guid: 830186b9bfa8fe94bb4b1fa52e5bdc40, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1828704092038361745}
+    - targetCorrespondingSourceObject: {fileID: 8202804942734134199, guid: 830186b9bfa8fe94bb4b1fa52e5bdc40, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7443276789024887940}
   m_SourcePrefab: {fileID: 100100000, guid: 830186b9bfa8fe94bb4b1fa52e5bdc40, type: 3}
+--- !u!1 &980515349481984680 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8202804942734134199, guid: 830186b9bfa8fe94bb4b1fa52e5bdc40, type: 3}
+  m_PrefabInstance: {fileID: 8956896741581232415}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1828704092038361745
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 980515349481984680}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 0
+  serializedVersion: 3
+  m_Size: {x: 0.05750013, y: 0.25585786, z: 1.2179769}
+  m_Center: {x: 0.00000059004515, y: 0.0045876037, z: 0.38820624}
+--- !u!114 &7443276789024887940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 980515349481984680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37eae7a9b3fc6bf45acd46a4f3353ca4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeWeapon
+  hitCollider: {fileID: 1828704092038361745}
 --- !u!4 &3791015063778265216 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5247025876589416863, guid: 830186b9bfa8fe94bb4b1fa52e5bdc40, type: 3}
