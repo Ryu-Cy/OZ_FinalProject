@@ -22,7 +22,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private PlayerAnimationEventController animationEventController;
 
     [Header("Combat Settings")]
-    [SerializeField] private Collider weaponCollider; // 타격 판정용 무기 콜라이더
+    [SerializeField] private Transform weaponParent; // 무기가 장착되는 부모 객체
+    [SerializeField] private MeleeWeapon currentWeapon; // 현재 장착 중인 무기 컴포넌트
 
     [Header("Move Settings")]
     [SerializeField] private float walkSpeed = 2.5f;
@@ -41,6 +42,7 @@ public class PlayerController : MonoBehaviour
     public Animator Animator => animator;
     public PlayerInputController InputController => inputController;
     public PlayerAnimationEventController AnimationEventController => animationEventController;
+    public MeleeWeapon CurrentWeapon => currentWeapon;
     public float WalkSpeed => walkSpeed;
     public float RunSpeed => runSpeed;
     public float SprintSpeed => sprintSpeed;
@@ -62,6 +64,8 @@ public class PlayerController : MonoBehaviour
         if (animationEventController == null)
             animationEventController = GetComponentInChildren<PlayerAnimationEventController>();
 
+        InitWeapon();
+
         StateMachine = new PlayerStateMachine(this);
         StateMachine.OnStateChanged += HandleStateChanged;
     }
@@ -75,6 +79,30 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         StateMachine.Initialize(StateMachine.IdleState);
+    }
+
+    /// <summary>
+    /// 무기 컴포넌트 초기화 및 바인딩
+    /// </summary>
+    public void InitWeapon()
+    {
+        // 인스펙터에 직접 할당되어 있지 않다면 소켓 또는 자식에서 자동 탐색
+        if (currentWeapon == null)
+        {
+            if (weaponParent != null)
+            {
+                currentWeapon = weaponParent.GetComponentInChildren<MeleeWeapon>();
+            }
+            else
+            {
+                currentWeapon = GetComponentInChildren<MeleeWeapon>();
+            }
+        }
+
+        if (currentWeapon != null)
+        {
+            currentWeapon.DisableAttack();
+        }
     }
 
     /// <summary>
@@ -158,13 +186,24 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// 무기 히트박스 콜라이더 토글
+    /// 무기 공격 판정 활성화
     /// </summary>
-    public void SetWeaponColliderActive(bool isActive)
+    public void EnableWeaponAttack()
     {
-        if (weaponCollider != null)
+        if (currentWeapon != null)
         {
-            weaponCollider.enabled = isActive;
+            currentWeapon.EnableAttack();
+        }
+    }
+
+    /// <summary>
+    /// 무기 공격 판정 비활성화
+    /// </summary>
+    public void DisableWeaponAttack()
+    {
+        if (currentWeapon != null)
+        {
+            currentWeapon.DisableAttack();
         }
     }
 

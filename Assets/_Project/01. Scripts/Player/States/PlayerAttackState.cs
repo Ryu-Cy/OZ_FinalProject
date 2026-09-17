@@ -108,7 +108,7 @@ public class PlayerAttackState : PlayerBaseState
         }
 
         // 무기 판정 및 콤보 초기화
-        player.SetWeaponColliderActive(false);
+        player.DisableWeaponAttack();
         currentCombo = AttackComboType.None;
         player.PlayAttackAnimation((int)currentCombo);
         player.SetHorizontalVelocity(Vector3.zero);
@@ -121,7 +121,7 @@ public class PlayerAttackState : PlayerBaseState
         isComboWindowOpen = false;
         hasComboReserved = false;
 
-        player.SetWeaponColliderActive(false);
+        player.DisableWeaponAttack();
 
         // 공격 시작 시점에만 방향키 입력 방향으로 회전 정렬
         Vector2 input = player.InputController.InputVector;
@@ -146,12 +146,12 @@ public class PlayerAttackState : PlayerBaseState
 
     private void HandleHitStart()
     {
-        player.SetWeaponColliderActive(true);
+        player.EnableWeaponAttack();
     }
 
     private void HandleHitEnd()
     {
-        player.SetWeaponColliderActive(false);
+        player.DisableWeaponAttack();
         isComboWindowOpen = true;
     }
 
