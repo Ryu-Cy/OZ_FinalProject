@@ -86,7 +86,7 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     public void InitWeapon()
     {
-        // 인스펙터에 직접 할당되어 있지 않다면 소켓 또는 자식에서 자동 탐색
+        // 인스펙터에 직접 할당되어 있지 않다면 부모에서 자동 탐색
         if (currentWeapon == null)
         {
             if (weaponParent != null)
@@ -123,7 +123,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// 상태(State)에서 호출하여 이번 프레임의 목표 수평 속도 벡터 설정
+    /// 각 상태에서 호출하여 이번 프레임의 목표 수평 속도 벡터 설정
     /// </summary>
     public void SetHorizontalVelocity(Vector3 velocity)
     {
@@ -154,7 +154,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// 애니메이터의 Speed 파라미터를 감소시키며 갱신
+    /// 애니메이터의 Speed 파라미터를 감소 및 갱신
     /// </summary>
     public void UpdateAnimationSpeed(float targetSpeed, float dampTime = 0.1f)
     {
@@ -241,8 +241,8 @@ public class PlayerController : MonoBehaviour
     private void Reset()
     {
         characterController = GetComponent<CharacterController>();
-        inputController = GetComponent<PlayerInputController>();
         animator = GetComponent<Animator>();
+        inputController = GetComponent<PlayerInputController>();
         animationEventController = GetComponentInChildren<PlayerAnimationEventController>();
     }
 }
