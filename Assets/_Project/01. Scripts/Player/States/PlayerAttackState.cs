@@ -123,14 +123,6 @@ public class PlayerAttackState : PlayerBaseState
 
         player.DisableWeaponAttack();
 
-        // 공격 시작 시점에만 방향키 입력 방향으로 회전 정렬
-        Vector2 input = player.InputController.InputVector;
-        if (input.sqrMagnitude > 0.01f)
-        {
-            Vector3 targetDir = new Vector3(input.x, 0.0f, input.y).normalized;
-            player.SnapRotation(targetDir);
-        }
-
         player.PlayAttackAnimation((int)currentCombo);
     }
 
