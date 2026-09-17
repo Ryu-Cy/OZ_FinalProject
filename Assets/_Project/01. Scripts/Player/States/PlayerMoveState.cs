@@ -53,7 +53,8 @@ public class PlayerMoveState : PlayerBaseState
         Vector2 input = player.InputController.InputVector;
         if (input.sqrMagnitude <= 0.01f) return;
 
-        Vector3 moveDirection = new Vector3(input.x, 0.0f, input.y).normalized;
+        // 카메라 시선 방향 기준의 이동 벡터 계산
+        Vector3 moveDirection = player.GetCameraRelativeMovement(input);
 
         // 조작 방식에 따른 속도 및 애니메이션 값 처리
         float targetSpeed = player.InputController.IsWalkPressed ? player.WalkSpeed : player.RunSpeed;

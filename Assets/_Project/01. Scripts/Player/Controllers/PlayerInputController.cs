@@ -14,9 +14,12 @@ public class PlayerInputController : MonoBehaviour
     public bool IsWalkPressed { get; private set; }
     public bool IsSprintPressed { get; private set; }
 
-    // 이벤트
+    // 이동 및 전투 이벤트
     public event Action OnDodgeTriggered;
     public event Action OnAttackTriggered;
+
+    // 시스템 UI 이벤트
+    public event Action OnEscapeTriggered;
 
     private void Awake()
     {
@@ -34,10 +37,13 @@ public class PlayerInputController : MonoBehaviour
         inputActions.Player.Walk.canceled += OnWalkCanceled;
 
         inputActions.Player.Sprint.performed += OnSprintPerformed;
-        inputActions.Player.Sprint.canceled += OnSprintCanceled; 
-        
+        inputActions.Player.Sprint.canceled += OnSprintCanceled;
+
         inputActions.Player.Dodge.performed += OnDodgePerformed;
         inputActions.Player.Attack.performed += OnAttackPerformed;
+
+        // Escape 메뉴 토글 이벤트
+        inputActions.Player.Escape.performed += OnEscapePerformed;
     }
 
     private void OnDisable()
@@ -54,6 +60,8 @@ public class PlayerInputController : MonoBehaviour
         inputActions.Player.Dodge.performed -= OnDodgePerformed;
         inputActions.Player.Attack.performed -= OnAttackPerformed;
 
+        inputActions.Player.Escape.performed -= OnEscapePerformed;
+
         inputActions.Disable();
     }
 
@@ -68,4 +76,6 @@ public class PlayerInputController : MonoBehaviour
 
     private void OnDodgePerformed(InputAction.CallbackContext context) => OnDodgeTriggered?.Invoke();
     private void OnAttackPerformed(InputAction.CallbackContext context) => OnAttackTriggered?.Invoke();
+
+    private void OnEscapePerformed(InputAction.CallbackContext context) => OnEscapeTriggered?.Invoke();
 }

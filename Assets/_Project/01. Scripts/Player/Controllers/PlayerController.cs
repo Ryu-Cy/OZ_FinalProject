@@ -36,6 +36,7 @@ public class PlayerController : MonoBehaviour
     // 내부 필드
     private Vector3 horizontalVelocity;
     private float verticalVelocity;
+    private Transform mainCameraTransform;
 
     // 프로퍼티
     public CharacterController CharacterController => characterController;
@@ -79,6 +80,11 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         StateMachine.Initialize(StateMachine.IdleState);
+
+        if (Camera.main != null)
+        {
+            mainCameraTransform = Camera.main.transform;
+        }
     }
 
     /// <summary>
@@ -86,7 +92,6 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     public void InitWeapon()
     {
-        // 인스펙터에 직접 할당되어 있지 않다면 부모에서 자동 탐색
         if (currentWeapon == null)
         {
             if (weaponParent != null)
@@ -120,6 +125,37 @@ public class PlayerController : MonoBehaviour
         characterController.Move(finalMovement);
 
         horizontalVelocity = Vector3.zero;
+    }
+
+    /// <summary>
+    /// 입력 벡터(Vector2)를 현재 메인 카메라의 시선 방향 기준의 3D 월드 이동 벡터로 변환
+    /// </summary>
+    public Vector3 GetCameraRelativeMovement(Vector2 input)
+    {
+        if (input.sqrMagnitude < 0.001f)
+            return Vector3.zero;
+
+        if (mainCameraTransform == null)
+        {
+            if (Camera.main != null)
+            {
+                mainCameraTransform = Camera.main.transform;
+            }
+            else
+            {
+                return new Vector3(input.x, 0.0f, input.y).normalized;
+            }
+        }
+
+        Vector3 camForward = mainCameraTransform.forward;
+        Vector3 camRight = mainCameraTransform.right;
+
+        camForward.y = 0.0f;
+        camRight.y = 0.0f;
+        camForward.Normalize();
+        camRight.Normalize();
+
+        return (camForward * input.y + camRight * input.x).normalized;
     }
 
     /// <summary>
