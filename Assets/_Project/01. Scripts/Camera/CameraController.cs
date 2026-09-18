@@ -14,26 +14,49 @@ public class CameraController : MonoBehaviour
         axisController = GetComponent<CinemachineInputAxisController>();
     }
 
-    private void Update()
+    private void OnEnable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnCursorLockChanged += HandleCursorLockChanged;
+        }
+    }
+
+    private void Start()
+    {
+        // 초기 커서 상태 동기화
+        bool isCurrentLocked = (Cursor.lockState == CursorLockMode.Locked);
+        ApplyAxisState(isCurrentLocked);
+    }
+
+    private void OnDisable()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnCursorLockChanged -= HandleCursorLockChanged;
+        }
+    }
+
+    /// <summary>
+    /// 커서 락 상태 변경 이벤트 수신부
+    /// </summary>
+    private void HandleCursorLockChanged(bool isLocked)
+    {
+        ApplyAxisState(isLocked);
+    }
+
+    /// <summary>
+    /// 시네머신 축 입력 On/Off 처리
+    /// </summary>
+    private void ApplyAxisState(bool isEnabled)
     {
         if (axisController == null) return;
 
-        // 마우스가 화면 중앙에 완벽히 잠겨 있을 때만 회전 입력 허용
-        bool isCursorLocked = (Cursor.lockState == CursorLockMode.Locked);
+        axisController.enabled = isEnabled;
 
-        // 시네머신 축 컴포넌트 활성화/비활성화
-        if (axisController.enabled != isCursorLocked)
-        {
-            axisController.enabled = isCursorLocked;
-        }
-
-        // 축 내부 개별 컨트롤러 동기화
         for (int i = 0; i < axisController.Controllers.Count; i++)
         {
-            if (axisController.Controllers[i].Enabled != isCursorLocked)
-            {
-                axisController.Controllers[i].Enabled = isCursorLocked;
-            }
+            axisController.Controllers[i].Enabled = isEnabled;
         }
     }
 }
