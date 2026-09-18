@@ -68,7 +68,7 @@ public class MeleeWeapon : MonoBehaviour
                 hitPoint: hitPoint,
                 hitNormal: -hitDirection,
                 hitDirection: hitDirection,
-                instigator: transform.root.gameObject
+                attacker: transform.root.gameObject
             );
              
             damageable.TakeDamage(damageInfo);
