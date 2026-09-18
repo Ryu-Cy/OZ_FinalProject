@@ -20,7 +20,7 @@ public class AttackTest : MonoBehaviour, IDamageable
 
         Debug.Log($"<color=red>[Dummy Hit]</color> {name} 피격! " +
                   $"대미지: {damageInfo.Amount} | 남은 체력: {currentHealth}/{maxHealth} | " +
-                  $"타격 위치: {damageInfo.HitPoint} | 공격자: {damageInfo.Instigator?.name}");
+                  $"타격 위치: {damageInfo.HitPoint} | 공격자: {damageInfo.Attacker?.name}");
 
         if (currentHealth <= 0)
         {
