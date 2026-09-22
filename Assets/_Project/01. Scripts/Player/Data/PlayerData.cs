@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 플레이어 캐릭터 전용 데이터 베이스 클래스
+/// 플레이어 전용 데이터 베이스 클래스
 /// </summary>
 [CreateAssetMenu(fileName = "NewPlayerData", menuName = "Character/Data/Player Data")]
 public class PlayerData : CharacterData

@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// 적 전용 데이터 베이스 클래스
+/// </summary>
 [CreateAssetMenu(fileName = "NewEnemyData", menuName = "Character/Data/Enemy Data")]
 public class EnemyData : CharacterData
 {
