@@ -21,7 +21,7 @@ public class SceneLoadManager : Singleton<SceneLoadManager>, IInitializable
     /// </summary>
     public void Initialize()
     {
-#if UNITY_EDITOR
+//#if UNITY_EDITOR
         // 에디터에서 바로 재생 시 현재 활성화된 씬에 맞춰 CurrentScene 보정
         string activeSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
 
@@ -37,7 +37,7 @@ public class SceneLoadManager : Singleton<SceneLoadManager>, IInitializable
         }
 
         Debug.Log($"[SceneLoadManager] 에디터 테스트 감지: CurrentScene -> {currentScene}");
-#endif
+//#endif
 
         Debug.Log("[SceneLoadManager] 초기화 완료");
     }
@@ -77,7 +77,7 @@ public class SceneLoadManager : Singleton<SceneLoadManager>, IInitializable
         OnSceneLoadCompleted?.Invoke(targetScene);
     }
 
-#if UNITY_EDITOR
+//#if UNITY_EDITOR
     /// <summary>
     /// 씬 이름을 문자열로 직접 지정하여 로드
     /// </summary>
@@ -99,5 +99,5 @@ public class SceneLoadManager : Singleton<SceneLoadManager>, IInitializable
 
         OnSceneLoadCompleted?.Invoke(SceneType.Test);
     }
-#endif
+//#endif
 }

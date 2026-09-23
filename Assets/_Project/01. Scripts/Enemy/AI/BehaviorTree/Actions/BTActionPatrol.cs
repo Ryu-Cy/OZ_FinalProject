@@ -73,19 +73,39 @@ public class BTActionPatrol : BTActionNode
 
     protected override BTNodeState ExecuteAction()
     {
-        if (enemyBlackboard == null || navAgent == null)
+        if (enemyBlackboard == null)
             return BTNodeState.Failure;
+
+        if (navAgent == null)
+        {
+            navAgent = GetComponentInParent<NavMeshAgent>();
+            if (navAgent == null)
+                return BTNodeState.Failure;
+        }
 
         if (patrolPoints == null || patrolPoints.Count == 0)
             return BTNodeState.Failure;
 
-        // 목표 지점이 설정되지 않았다면 현재 인덱스 지점으로 경로 설정
-        if (!hasDestination)
+        // 네브메시 활성화 및 정지 플래그 강제 해제 보장
+        if (navAgent.isOnNavMesh && navAgent.isStopped)
         {
-            SetDestinationToCurrentPoint();
+            navAgent.isStopped = false;
         }
 
-        // 경로 계산 대기 중 체크
+        // EnemyData에 정의된 순찰 이동 속도로 복구 (속도가 0으로 잠기는 현상 방지)
+        if (enemyBlackboard.EnemyData != null)
+        {
+            navAgent.speed = enemyBlackboard.EnemyData.MoveSpeed;
+        }
+
+        // 목적지가 없거나, 경로가 지워졌거나, 목적지와의 거리가 안 잡힐 때 새로 갱신
+        if (!hasDestination || (!navAgent.pathPending && !navAgent.hasPath))
+        {
+            SetDestinationToCurrentPoint();
+            return BTNodeState.Running;
+        }
+
+        // 경로 계산 중 대기
         if (navAgent.pathPending)
             return BTNodeState.Running;
 
@@ -97,7 +117,7 @@ public class BTActionPatrol : BTActionNode
             // 다음 순찰 포인트 인덱스로 갱신
             AdvanceToNextPoint();
 
-            // 대기 지점인 경우: 정지 후 Success 반환
+            // 대기 지점인 경우
             if (arrivedPoint.ShouldWait)
             {
                 StopMovement();
@@ -105,7 +125,7 @@ public class BTActionPatrol : BTActionNode
                 return BTNodeState.Success;
             }
 
-            // 대기하지 않는 지점인 경우: 즉시 다음 목표로 갱신하고 Running 유지
+            // 대기하지 않는 지점인 경우
             SetDestinationToCurrentPoint();
             return BTNodeState.Running;
         }
@@ -165,5 +185,10 @@ public class BTActionPatrol : BTActionNode
             navAgent.isStopped = true;
             navAgent.ResetPath();
         }
+    }
+
+    private void OnDisable()
+    {
+        hasDestination = false;
     }
 }

@@ -7,8 +7,8 @@ public enum SceneType
     Title,      // 타이틀 화면
     Loading,    // 비동기 씬 전환용 로딩 씬
     MainGame,   // 인게임 플레이 씬
-#if UNITY_EDITOR
+//#if UNITY_EDITOR
     Test,       // 테스트 씬 공통
-#endif
+//#endif
     Length
 }

@@ -22,12 +22,11 @@ public class BTRootNode : MonoBehaviour
 
     protected virtual void Awake()
     {
-        // BTBlackboard 생성 및 초기화
-        if (blackboard == null)
-        {
-            blackboard = CreateBlackboard();
-        }
-        blackboard.Initialize(transform);
+        // 팩토리 메서드를 호출하여 자식 클래스가 원하는 타입의 블랙보드를 강제 할당
+        blackboard = CreateBlackboard();
+
+        Transform ownerTransform = transform.parent != null ? transform.parent : transform;
+        blackboard.Initialize(ownerTransform);
 
         // 루트 자식 노드 탐색
         rootChildNode = GetComponentInChildren<BTNode>();

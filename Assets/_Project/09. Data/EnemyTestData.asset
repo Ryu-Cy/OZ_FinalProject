@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6a9895451dabc9498599fb0223d069a, type: 3}
+  m_Name: EnemyTestData
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyData
+  characterName: EnemyTest
+  maxHealth: 100
+  baseAttackPower: 10
+  baseDefense: 10
+  moveSpeed: 2
+  rotationSpeed: 360
+  viewDistance: 8
+  viewAngle: 50
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 17
+  attackRange: 2
+  attackCooldown: 2
+  chaseSpeed: 3.5

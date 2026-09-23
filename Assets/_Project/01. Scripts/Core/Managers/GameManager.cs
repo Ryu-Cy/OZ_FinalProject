@@ -62,9 +62,9 @@ public class GameManager : Singleton<GameManager>, IInitializable
         isMenuOpened = false;
 
         if (loadedScene == SceneType.MainGame
-#if UNITY_EDITOR
+//#if UNITY_EDITOR
             || loadedScene == SceneType.Test
-#endif
+//#endif
            )
         {
             BindPlayerInput();
@@ -115,9 +115,9 @@ public class GameManager : Singleton<GameManager>, IInitializable
         {
             if (SceneLoadManager.Instance != null &&
                 (SceneLoadManager.Instance.CurrentScene == SceneType.MainGame
-#if UNITY_EDITOR
+//#if UNITY_EDITOR
                 || SceneLoadManager.Instance.CurrentScene == SceneType.Test
-#endif
+//#endif
                 ))
             {
                 SetCursorLock(true);
