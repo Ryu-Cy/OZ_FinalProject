@@ -6,12 +6,15 @@ using UnityEngine;
 public class BTRootNode : MonoBehaviour
 {
     [Header("Tree Settings")]
-    [Tooltip("트리를 실행할 주기(초). 0이면 매 프레임(Update) 실행")]
+    [Tooltip("트리 실행 주기(초)")]
     [SerializeField] private float updateInterval = 0.1f;
 
     [Header("Debug")]
     [Tooltip("현재 트리의 최종 반환 상태")]
     [SerializeField] private BTNodeState currentTreeState = BTNodeState.None;
+
+    [Tooltip("현재 Running 중이거나 마지막으로 결과를 낸 하위 노드 이름")]
+    [SerializeField] private string currentActiveNodeName = "None";
 
     [SerializeField] private BTBlackboard blackboard;
 
@@ -20,9 +23,12 @@ public class BTRootNode : MonoBehaviour
     // 주기 실행용 타이머
     private float timer = 0f;
 
+    // 프로퍼티
+    public BTBlackboard Blackboard => blackboard;
+
     protected virtual void Awake()
     {
-        // 팩토리 메서드를 호출하여 자식 클래스가 원하는 타입의 블랙보드를 강제 할당
+        // 자식 클래스에 맞는 타입의 블랙보드 할당
         blackboard = CreateBlackboard();
 
         Transform ownerTransform = transform.parent != null ? transform.parent : transform;
@@ -58,22 +64,52 @@ public class BTRootNode : MonoBehaviour
 
         // 트리 검사
         currentTreeState = rootChildNode.Evaluate();
+
+        // 현재 실행 중이거나 결과를 낸 노드 이름 추적
+        currentActiveNodeName = FindActiveNodeName(rootChildNode);
     }
 
     /// <summary>
-    /// 블랙보드 인스턴스 생성 팩토리 메서드 패턴 활용
-    /// 해당 패턴을 활용했을 때 장점
-    /// 1. 의존성 분리: BTRootNode는 어떤 블랙보드가 들어오는지 몰라도 된다.
-    /// 2. 확장성 (OCP): 새로운 BT가 추가되더라도 기존 코드를 수정할 필요 없다. (몬스터 종류별 조건문 등)
-    /// 3. 안정성: 인스펙터 연결 등 타 방식에서 생길 수 있는 휴먼에러 차단
+    /// 하위 트리에서 현재 실행(Running) 중이거나 마지막으로 활성화된 리프 노드 이름을 탐색
+    /// </summary>
+    private string FindActiveNodeName(BTNode node)
+    {
+        if (node == null) return "None";
+
+        // 복합 노드(Composite)인 경우 Children 프로퍼티를 통해 자식을 추적
+        if (node is BTCompositeNode compositeNode && compositeNode.Children != null)
+        {
+            // 자식 중 Running 중인 노드가 있다면 그 안으로 더 깊이 탐색
+            for (int i = 0; i < compositeNode.Children.Count; i++)
+            {
+                var child = compositeNode.Children[i];
+                if (child != null && child.NodeState == BTNodeState.Running)
+                {
+                    return FindActiveNodeName(child);
+                }
+            }
+
+            // Running이 없다면 마지막으로 유효한 결과를 낸 자식 노드 반환
+            for (int i = compositeNode.Children.Count - 1; i >= 0; i--)
+            {
+                var child = compositeNode.Children[i];
+                if (child != null && child.NodeState != BTNodeState.None)
+                {
+                    return $"{child.gameObject.name} ({child.NodeState})";
+                }
+            }
+        }
+
+        // Action이나 Condition 등 단일 노드인 경우
+        return $"{node.gameObject.name} ({node.NodeState})";
+    }
+
+    /// <summary>
+    /// 블랙보드 인스턴스 생성
+    /// 팩토리 메서드 패턴 활용
     /// </summary>
     protected virtual BTBlackboard CreateBlackboard()
     {
         return new BTBlackboard();
     }
-
-    /// <summary>
-    /// 외부에서 블랙보드에 접근할 수 있도록 열어둔 프로퍼티
-    /// </summary>
-    public BTBlackboard Blackboard => blackboard;
 }

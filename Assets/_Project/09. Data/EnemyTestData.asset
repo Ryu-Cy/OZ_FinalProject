@@ -18,14 +18,15 @@ MonoBehaviour:
   baseDefense: 10
   moveSpeed: 2
   rotationSpeed: 360
-  viewDistance: 8
-  viewAngle: 50
-  targetLayer:
+  _combatType: 1
+  _viewDistance: 10
+  _viewAngle: 360
+  _targetLayer:
     serializedVersion: 2
     m_Bits: 64
-  obstacleLayer:
+  _obstacleLayer:
     serializedVersion: 2
-    m_Bits: 17
-  attackRange: 2
-  attackCooldown: 2
-  chaseSpeed: 3.5
+    m_Bits: 0
+  _attackRange: 2
+  _attackCooldown: 2.5
+  _chaseSpeed: 4.5

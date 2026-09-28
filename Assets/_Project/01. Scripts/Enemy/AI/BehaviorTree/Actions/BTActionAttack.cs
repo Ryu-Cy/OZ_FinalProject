@@ -18,6 +18,8 @@ public class BTActionAttack : BTActionNode
     private MeshRenderer meshRenderer;
     private Color originalColor;
 
+    private UnityEngine.AI.NavMeshAgent navAgent;
+
     private float attackEndTime = 0.0f;
     private bool isAttacking = false;
 
@@ -36,6 +38,7 @@ public class BTActionAttack : BTActionNode
 
         if (enemyBlackboard != null && enemyBlackboard.Owner != null)
         {
+            navAgent = enemyBlackboard.Owner.GetComponent<UnityEngine.AI.NavMeshAgent>();
             meshRenderer = enemyBlackboard.Owner.GetComponentInChildren<MeshRenderer>();
             if (meshRenderer != null)
             {
@@ -46,6 +49,12 @@ public class BTActionAttack : BTActionNode
 
     protected override BTNodeState ExecuteAction()
     {
+        if (navAgent != null && navAgent.isOnNavMesh)
+        {
+            navAgent.velocity = Vector3.zero;
+            navAgent.isStopped = true;
+        }
+
         // 블랙보드 및 필수 데이터 유효성 검사
         if (enemyBlackboard == null || enemyBlackboard.EnemyData == null)
         {

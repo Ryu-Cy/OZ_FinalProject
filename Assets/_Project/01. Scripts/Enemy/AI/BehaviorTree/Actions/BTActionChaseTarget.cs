@@ -2,17 +2,21 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// 블랙보드에 등록된 타겟을 향해 NavMeshAgent로 이동하는 액션 노드
+/// 지정된 슬롯 좌표 또는 플레이어 사거리를 향해 추적하는 액션 노드.
+/// 사거리 밖에서 어정쩡하게 굳는 현상을 원천 방지합니다.
 /// </summary>
 public class BTActionChaseTarget : BTActionNode
 {
+    [Header("Arrival Settings")]
+    [Tooltip("슬롯 좌표 도착 판정 거리")]
+    [SerializeField] private float _slotArrivalDistance = 0.4f;
+
     private EnemyBlackboard enemyBlackboard;
     private NavMeshAgent navAgent;
 
     public override void Initialize(BTBlackboard blackboard)
     {
         base.Initialize(blackboard);
-
         enemyBlackboard = blackboard as EnemyBlackboard;
 
         if (enemyBlackboard?.Owner != null)
@@ -25,7 +29,7 @@ public class BTActionChaseTarget : BTActionNode
     {
         if (enemyBlackboard == null || !enemyBlackboard.HasTarget || navAgent == null)
         {
-            HardStop();
+            LockAgent();
             return BTNodeState.Failure;
         }
 
@@ -34,58 +38,85 @@ public class BTActionChaseTarget : BTActionNode
 
         if (owner == null || target == null)
         {
-            HardStop();
+            LockAgent();
             return BTNodeState.Failure;
         }
 
-        // 시야 실시간 검사
-        EnemyVision vision = owner.GetComponent<EnemyVision>();
-        if (vision != null && !vision.TryFindTarget(out _))
-        {
-            enemyBlackboard.ClearTarget();
-            HardStop();
-            return BTNodeState.Failure;
-        }
-
-        // 수평 거리 및 방향 벡터 계산
         Vector3 toTarget = target.position - owner.position;
         toTarget.y = 0f;
         float distance = toTarget.magnitude;
 
         float attackRange = enemyBlackboard.EnemyData != null ? enemyBlackboard.EnemyData.AttackRange : 2.0f;
 
-        // 사거리 도달 판정 -> 감속 없이 칼제동 걸고 공격 시퀀스로 턴 넘김
+        // 플레이어와의 실제 거리가 공격 사거리 안쪽에 완전히 들어왔을 때
         if (distance <= attackRange)
         {
-            HardStop();
+            // 타깃 정면 조준
+            if (toTarget.sqrMagnitude > 0.001f)
+            {
+                owner.rotation = Quaternion.LookRotation(toTarget);
+            }
+
+            LockAgent();
             return BTNodeState.Success;
         }
 
-        // 전속력 질주 세팅
+        // 이동 수행
+        UnlockAgent();
+
         if (enemyBlackboard.EnemyData != null)
         {
             navAgent.speed = enemyBlackboard.EnemyData.ChaseSpeed;
         }
 
-        // 목적지를 플레이어 몸통(0m)이 아니라 공격 사거리로 설정
-        Vector3 targetEdge = target.position - (toTarget.normalized * attackRange);
+        // 할당된 슬롯 좌표가 있더라도, 플레이어 사거리 안쪽 지점을 향하도록 보장
+        Vector3 destination = enemyBlackboard.HasAssignedPosition
+            ? enemyBlackboard.AssignedPosition
+            : target.position - (toTarget.normalized * (attackRange - 0.35f));
 
-        navAgent.isStopped = false;
-        navAgent.SetDestination(targetEdge);
+        if (navAgent.isOnNavMesh)
+        {
+            navAgent.SetDestination(destination);
+        }
+
+        if (navAgent.pathPending)
+            return BTNodeState.Running;
+
+        // 슬롯 도착 판정
+        if (navAgent.isOnNavMesh && navAgent.hasPath)
+        {
+            if (navAgent.remainingDistance <= _slotArrivalDistance && distance <= attackRange)
+            {
+                LockAgent();
+                return BTNodeState.Success;
+            }
+        }
 
         return BTNodeState.Running;
     }
 
-    /// <summary>
-    /// 물리 관성과 네브메시 잔여 이동량을 즉시 0으로 소멸시키는 급제동
-    /// </summary>
-    private void HardStop()
+    private void LockAgent()
     {
         if (navAgent != null && navAgent.isOnNavMesh)
         {
-            navAgent.isStopped = true;
             navAgent.velocity = Vector3.zero;
+            navAgent.isStopped = true;
             navAgent.ResetPath();
+            navAgent.updatePosition = false;
         }
+    }
+
+    private void UnlockAgent()
+    {
+        if (navAgent != null && navAgent.isOnNavMesh)
+        {
+            navAgent.updatePosition = true;
+            navAgent.isStopped = false;
+        }
+    }
+
+    private void OnDisable()
+    {
+        LockAgent();
     }
 }
