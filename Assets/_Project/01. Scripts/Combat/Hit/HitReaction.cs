@@ -179,4 +179,26 @@ public class HitReaction : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// 락온 조준점 및 상체 기준 피벗으로 활용할 가슴/척추 본 Transform
+    /// </summary>
+    public Transform ChestTransform
+    {
+        get
+        {
+            if (reactionBones == null || reactionBones.Count == 0) return null;
+
+            // Chest 본 우선 탐색
+            var chest = reactionBones.Find(b => b.BoneName == HumanBodyBones.Chest.ToString());
+            if (chest != null && chest.BoneTransform != null) return chest.BoneTransform;
+
+            // 없으면 UpperChest 탐색
+            var upper = reactionBones.Find(b => b.BoneName == HumanBodyBones.UpperChest.ToString());
+            if (upper != null && upper.BoneTransform != null) return upper.BoneTransform;
+
+            // 둘 다 없으면 등록된 첫 번째 본 반환
+            return reactionBones[0].BoneTransform;
+        }
+    }
 }

@@ -17,6 +17,7 @@ public class PlayerInputController : MonoBehaviour
     // 이동 및 전투 이벤트
     public event Action OnDodgeTriggered;
     public event Action OnAttackTriggered;
+    public event Action OnLockOnTriggered;
 
     // 시스템 UI 이벤트
     public event Action OnEscapeTriggered;
@@ -42,7 +43,8 @@ public class PlayerInputController : MonoBehaviour
         inputActions.Player.Dodge.performed += OnDodgePerformed;
         inputActions.Player.Attack.performed += OnAttackPerformed;
 
-        // Escape 메뉴 토글 이벤트
+        inputActions.Player.LockOn.performed += OnLockOnPerformed;
+
         inputActions.Player.Escape.performed += OnEscapePerformed;
     }
 
@@ -60,6 +62,8 @@ public class PlayerInputController : MonoBehaviour
         inputActions.Player.Dodge.performed -= OnDodgePerformed;
         inputActions.Player.Attack.performed -= OnAttackPerformed;
 
+        inputActions.Player.LockOn.performed -= OnLockOnPerformed;
+
         inputActions.Player.Escape.performed -= OnEscapePerformed;
 
         inputActions.Disable();
@@ -76,6 +80,8 @@ public class PlayerInputController : MonoBehaviour
 
     private void OnDodgePerformed(InputAction.CallbackContext context) => OnDodgeTriggered?.Invoke();
     private void OnAttackPerformed(InputAction.CallbackContext context) => OnAttackTriggered?.Invoke();
+
+    private void OnLockOnPerformed(InputAction.CallbackContext context) => OnLockOnTriggered?.Invoke();
 
     private void OnEscapePerformed(InputAction.CallbackContext context) => OnEscapeTriggered?.Invoke();
 }

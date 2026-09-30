@@ -125,6 +125,16 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "LockOn",
+                    "type": "Button",
+                    "id": "5e9a6fd2-5007-411b-8517-6ec1855cc8c4",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -543,6 +553,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Escape",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "251190aa-edc7-4834-acb5-35222037cd1c",
+                    "path": "<Mouse>/middleButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "LockOn",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
