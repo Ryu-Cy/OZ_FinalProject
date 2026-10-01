@@ -18,7 +18,7 @@ public class EnemyBlackboard : BTBlackboard
     [Tooltip("타겟을 놓친 마지막 위치")]
     private Vector3 _lastTargetPosition;
 
-    [Header("어그로 잔류 타이머")]
+    [Header("어그로 유지 타이머")]
     private float _lostTargetTimer = 0.0f;
     private bool _isTargetInSight = false;
 
@@ -48,7 +48,7 @@ public class EnemyBlackboard : BTBlackboard
     [Tooltip("목표 좌표 (우회 지점/길막기 위치 등)")]
     private Vector3 _assignedPosition;
 
-    [Tooltip("유효한 목표 좌표가 할당되었는지 여부")]
+    [Tooltip("유효한 목표 좌표 할당 여부")]
     private bool _hasAssignedPosition = false;
 
     #region Properties
@@ -80,6 +80,7 @@ public class EnemyBlackboard : BTBlackboard
     public Vector3 Destination { get => _destination; set => _destination = value; }
     public float NextAttackTime { get => _nextAttackTime; set => _nextAttackTime = value; }
     public bool IsAttackReady => Time.time >= _nextAttackTime;
+    public bool IsAttacking { get; set; } = false;
     public bool IsDead { get => _isDead; set => _isDead = value; }
 
     // 집단 전술

@@ -1,42 +1,36 @@
 using UnityEngine;
 
 /// <summary>
-/// 제자리에서 타깃을 향해 몸을 회전시키고, 조준이 완료되면 공격 노드로 진입시키는 액션 노드.
+/// 제자리에서 타겟을 향해 몸을 회전시키고, 조준이 완료되면 공격 노드로 진입시키는 액션 노드.
 /// </summary>
 public class BTActionLookAtTarget : BTActionNode
 {
-    [Tooltip("타겟을 향한 회전 속도")]
+    [Tooltip("회전 속도")]
     [SerializeField] private float _rotationSpeed = 8.0f;
 
-    [Tooltip("타겟을 정면으로 포착했다고 판단하는 허용 각도")]
+    [Tooltip("타겟 포착 각도")]
     [SerializeField] private float _facingAngleTolerance = 25.0f;
 
-    [Tooltip("공격 조준 중 다른 적에게 밀려났을 때 추적으로 전환할 거리")]
+    [Tooltip("공격 조준 중 밀려났을 때 추적으로 전환할 거리")]
     [SerializeField] private float _breakDistanceMargin = 0.4f;
 
     private EnemyBlackboard _enemyBlackboard;
-    private BTActionAttack _attackAction;
 
     public override void Initialize(BTBlackboard blackboard)
     {
         base.Initialize(blackboard);
         _enemyBlackboard = blackboard as EnemyBlackboard;
-
-        if (_enemyBlackboard?.Owner != null)
-        {
-            _attackAction = _enemyBlackboard.Owner.GetComponentInChildren<BTActionAttack>();
-        }
     }
 
     protected override BTNodeState ExecuteAction()
     {
-        // 이미 공격 모션이 진행 중인 경우 끝날 때까지 유지
-        if (_attackAction != null && _attackAction.IsAttacking)
+        // 이미 공격 모션이 진행 중인 경우 완료 상태 유지
+        if (_enemyBlackboard != null && _enemyBlackboard.IsAttacking)
         {
             return BTNodeState.Success;
         }
 
-        // 타깃 유효성 검사
+        // 타겟 유효성 검사
         if (_enemyBlackboard == null || !_enemyBlackboard.HasTarget)
             return BTNodeState.Failure;
 
@@ -51,13 +45,14 @@ public class BTActionLookAtTarget : BTActionNode
         directionToTarget.y = 0f;
         float currentDistance = directionToTarget.magnitude;
 
+        // 공격 범위 + 마진을 벗어나면 실패 상태 반환
         float attackRange = _enemyBlackboard.EnemyData != null ? _enemyBlackboard.EnemyData.AttackRange : 2.0f;
         if (currentDistance > attackRange + _breakDistanceMargin)
         {
             return BTNodeState.Failure;
         }
 
-        // 타깃을 향한 회전 계산
+        // 타겟을 향한 회전 계산
         if (directionToTarget.sqrMagnitude > 0.001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);

@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d6a9895451dabc9498599fb0223d069a, type: 3}
-  m_Name: EnemyTestData
+  m_Name: Enemy_Ranged_Test_Data
   m_EditorClassIdentifier: Assembly-CSharp::EnemyData
-  characterName: EnemyTest
+  characterName: Enemy_Ranged_Test
   maxHealth: 100
   baseAttackPower: 10
   baseDefense: 10
   moveSpeed: 2
   rotationSpeed: 360
-  _combatType: 1
+  _combatType: 2
   _viewDistance: 10
   _viewAngle: 360
   _targetLayer:
@@ -27,6 +27,7 @@ MonoBehaviour:
   _obstacleLayer:
     serializedVersion: 2
     m_Bits: 0
-  _attackRange: 2
+  _attackRange: 8
   _attackCooldown: 2.5
   _chaseSpeed: 4.5
+  _targetMemoryDuration: 4

@@ -142,13 +142,14 @@ public class HitReaction : MonoBehaviour
                 bone.AngleVelocity = 0.0f;
             }
 
+            // 회전 적용
             Quaternion offsetRotation = Quaternion.AngleAxis(bone.CurrentAngle, bone.RotAxis);
             bone.BoneTransform.rotation = offsetRotation * bone.BoneTransform.rotation;
         }
     }
 
     /// <summary>
-    /// 자동으로 휴머노이드 본을 찾아 등록하는 함수
+    /// 휴머노이드 본을 찾아 등록하는 함수
     /// </summary>
     [ContextMenu("Auto Find Humanoid Bones")]
     public void AutoFindBones()
@@ -181,7 +182,7 @@ public class HitReaction : MonoBehaviour
     }
 
     /// <summary>
-    /// 락온 조준점 및 상체 기준 피벗으로 활용할 가슴/척추 본 Transform
+    /// 락온 조준점 및 상체 기준 피벗으로 활용할 가슴/척추 본 Transform 반환
     /// </summary>
     public Transform ChestTransform
     {

@@ -3,8 +3,9 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// 현재 씬 내의 교전 상황을 관리하는 로컬 매니저 (전술) <br/>
-/// 1번: 1마리 우회와 정면 2마리 포위
+/// 현재 씬 내의 교전 상황을 관리하는 로컬 매니저 (전술 조율자) <br/>
+/// 전술 1: 원거리 1 + 바디블로커 1 매칭 기반 협공 및 포위 <br/>
+/// 전술 2: 순수 근접 3마리 이상 시 우회 1마리 + 정면 포위
 /// </summary>
 public class CombatManager : LocalSingleton<CombatManager>
 {
@@ -17,14 +18,14 @@ public class CombatManager : LocalSingleton<CombatManager>
     [SerializeField] private float _tacticUpdateInterval = 0.2f;
 
     [Header("Distance & Slot Settings")]
-    [Tooltip("공격 사거리 기준 진입 거리 (사거리 경계 멈춤 방지용)")]
+    [Tooltip("공격 사거리 기준 진입 거리")]
     [SerializeField] private float _rangeOffset = 0.35f;
 
-    [Tooltip("정면 적들 좌우 분산 각도(도 단위)")]
+    [Tooltip("정면 적들 좌우 분산 각도(도)")]
     [SerializeField] private float _frontSpreadAngle = 45.0f;
 
     [Header("Flank Settings")]
-    [Tooltip("우회 시 유지할 안전 선회 반경 오프셋")]
+    [Tooltip("우회 시 유지할 선회 반경")]
     [SerializeField] private float _orbitMargin = 0.5f;
 
     [Tooltip("매 갱신마다 적이 우회전진할 각도")]
@@ -44,6 +45,7 @@ public class CombatManager : LocalSingleton<CombatManager>
     private readonly List<EnemyController> _rangedEnemies = new List<EnemyController>(8);
 
     private EnemyController _currentFlanker = null;
+    private EnemyController _currentBlocker = null;
     private float _flankerSign = 1.0f;
 
     private float _timer = 0f;
@@ -92,6 +94,10 @@ public class CombatManager : LocalSingleton<CombatManager>
         }
     }
 
+    /// <summary>
+    /// 씬 내의 에너미를 전술 조율 대상에 등록
+    /// </summary>
+    /// <param name="enemy">등록할 적</param>
     public void RegisterEnemy(EnemyController enemy)
     {
         if (enemy == null || _registeredEnemies.Contains(enemy))
@@ -100,15 +106,17 @@ public class CombatManager : LocalSingleton<CombatManager>
         _registeredEnemies.Add(enemy);
     }
 
+    /// <summary>
+    /// 씬 내의 에너미를 전술 조율 대상에서 해제
+    /// </summary>
+    /// <param name="enemy">등록 해제할 적</param>
     public void UnregisterEnemy(EnemyController enemy)
     {
         if (enemy == null)
             return;
 
-        if (_currentFlanker == enemy)
-        {
-            _currentFlanker = null;
-        }
+        if (_currentFlanker == enemy) _currentFlanker = null;
+        if (_currentBlocker == enemy) _currentBlocker = null;
 
         if (_registeredEnemies.Remove(enemy))
         {
@@ -119,6 +127,9 @@ public class CombatManager : LocalSingleton<CombatManager>
         }
     }
 
+    /// <summary>
+    /// 씬 내 등록된 적들을 플레이어 기준으로 전술 분류 및 좌표 할당
+    /// </summary>
     private void CoordinateTactics()
     {
         _meleeEnemies.Clear();
@@ -127,6 +138,7 @@ public class CombatManager : LocalSingleton<CombatManager>
         Vector3 playerPos = _playerTransform.position;
         Vector3 playerForward = _playerTransform.forward;
 
+        // 등록된 적 타입별 분류
         for (int i = 0; i < _registeredEnemies.Count; i++)
         {
             EnemyController enemy = _registeredEnemies[i];
@@ -142,84 +154,165 @@ public class CombatManager : LocalSingleton<CombatManager>
             }
         }
 
-        // =========================================================================
-        // 근거리 적 3개체 이상
-        // =========================================================================
-        if (_meleeEnemies.Count >= 3)
+        // 근접 적이 없으면 전술 분기 종료
+        if (_meleeEnemies.Count == 0)
         {
-            if (_currentFlanker != null && (!_meleeEnemies.Contains(_currentFlanker) || _currentFlanker.Blackboard == null || _currentFlanker.Blackboard.IsDead))
+            _currentBlocker = null;
+            _currentFlanker = null;
+            return;
+        }
+
+        // 가용 근접 적 풀 복사
+        List<EnemyController> availableMelee = new List<EnemyController>(_meleeEnemies);
+
+        // =========================================================================
+        // [전술 1] 원거리 적이 존재하는 경우
+        // =========================================================================
+        if (_rangedEnemies.Count > 0)
+        {
+            EnemyController primaryRanged = _rangedEnemies[0];
+
+            // 바디블로커가 유효한지 확인, 유효하지 않으면 null 처리
+            if (_currentBlocker != null && (!availableMelee.Contains(_currentBlocker) || _currentBlocker.Blackboard == null || _currentBlocker.Blackboard.IsDead))
+            {
+                _currentBlocker = null;
+            }
+            // 바디블로커가 없거나 유효하지 않은 경우, 가장 가까운 근접 적을 선택
+            if (_currentBlocker == null)
+            {
+                // 원거리 적과 플레이어 사이의 중간 지점 계산
+                Vector3 blockMidPoint = Vector3.Lerp(playerPos, primaryRanged.transform.position, _blockRatio);
+                availableMelee.Sort((a, b) =>
+                {
+                    float distA = (a.transform.position - blockMidPoint).sqrMagnitude;
+                    float distB = (b.transform.position - blockMidPoint).sqrMagnitude;
+                    return distA.CompareTo(distB);
+                });
+                // 가장 가까운 근접 적을 바디블로커로 선택
+                _currentBlocker = availableMelee[0];
+            }
+            // 바디블로커 좌표 계산 및 할당
+            CoordinateBodyBlocker(_currentBlocker, playerPos, primaryRanged.transform.position);
+            availableMelee.Remove(_currentBlocker);
+
+            // 블로커를 제외하고 남은 근접 적이 2마리 이상일 때만 우회(SideAttacker) 허용
+            if (availableMelee.Count >= 2)
+            {
+                AssignFlankerRole(availableMelee, playerPos, playerForward);
+            }
+            else
             {
                 _currentFlanker = null;
             }
 
-            if (_currentFlanker == null)
-            {
-                _meleeEnemies.Sort((a, b) =>
-                {
-                    float distA = (a.transform.position - playerPos).sqrMagnitude;
-                    float distB = (b.transform.position - playerPos).sqrMagnitude;
-                    return distA.CompareTo(distB);
-                });
-
-                _currentFlanker = _meleeEnemies[_meleeEnemies.Count - 1];
-
-                Vector3 toEnemy = _currentFlanker.transform.position - playerPos;
-                toEnemy.y = 0f;
-                float initAngle = Vector3.SignedAngle(playerForward, toEnemy.normalized, Vector3.up);
-                _flankerSign = (initAngle >= 0f) ? 1.0f : -1.0f;
-            }
-
-            List<EnemyController> frontAttackers = new List<EnemyController>(4);
-            for (int i = 0; i < _meleeEnemies.Count; i++)
-            {
-                if (_meleeEnemies[i] != _currentFlanker)
-                {
-                    frontAttackers.Add(_meleeEnemies[i]);
-                }
-            }
-
-            // 정면 1번(-45도), 2번(+45도) 슬롯
-            if (frontAttackers.Count > 0) AssignFrontSlot(frontAttackers[0], playerPos, playerForward, -_frontSpreadAngle);
-            if (frontAttackers.Count > 1) AssignFrontSlot(frontAttackers[1], playerPos, playerForward, _frontSpreadAngle);
-
-            for (int i = 2; i < frontAttackers.Count; i++)
-            {
-                EnemyBlackboard bb = frontAttackers[i].Blackboard;
-                if (bb != null)
-                {
-                    bb.Role = CombatRole.FrontAttacker;
-                    bb.ClearAssignedTactics();
-                }
-            }
-
-            CoordinateCompassFlanker(_currentFlanker, playerPos, playerForward);
+            // 남은 근접 적은 정면 배치
+            AssignRemainingFrontAttackers(availableMelee, playerPos, playerForward);
             return;
         }
 
         // =========================================================================
-        // 1~2개체일 때
+        // [전술 2] 원거리 적이 없는 경우
         // =========================================================================
-        _currentFlanker = null;
-        for (int i = 0; i < _meleeEnemies.Count; i++)
+        _currentBlocker = null;
+
+        // 근접 적이 3마리 이상일 때만 1마리 우회 기습
+        if (availableMelee.Count >= 3)
         {
-            float angle = (i % 2 == 0) ? -_frontSpreadAngle * 0.5f : _frontSpreadAngle * 0.5f;
-            AssignFrontSlot(_meleeEnemies[i], playerPos, playerForward, angle);
+            AssignFlankerRole(availableMelee, playerPos, playerForward);
+        }
+        else
+        {
+            _currentFlanker = null;
+        }
+
+        // 남은 적 정면 배치
+        AssignRemainingFrontAttackers(availableMelee, playerPos, playerForward);
+    }
+
+    /// <summary>
+    /// 원거리 적과 플레이어 사이 경로를 가로막는 위치 좌표를 계산하여 할당
+    /// </summary>
+    private void CoordinateBodyBlocker(EnemyController blocker, Vector3 playerPos, Vector3 rangedPos)
+    {
+        EnemyBlackboard bb = blocker.Blackboard;
+        if (bb == null) return;
+
+        bb.Role = CombatRole.BodyBlocker;
+
+        Vector3 blockTargetPos = Vector3.Lerp(playerPos, rangedPos, _blockRatio);
+        blockTargetPos.y = playerPos.y;
+
+        bb.SetAssignedPosition(SampleNavMeshPosition(blockTargetPos));
+    }
+
+    /// <summary>
+    /// 가용 근접 풀에서 플레이어 기준 가장 먼 적을 우회 공격자로 선택
+    /// </summary>
+    private void AssignFlankerRole(List<EnemyController> pool, Vector3 playerPos, Vector3 playerForward)
+    {
+        if (_currentFlanker != null && (!pool.Contains(_currentFlanker) || _currentFlanker.Blackboard == null || _currentFlanker.Blackboard.IsDead))
+        {
+            _currentFlanker = null;
+        }
+
+        // 우회 공격자가 없으면 플레이어 기준 가장 먼 적을 선택
+        if (_currentFlanker == null)
+        {
+            // 플레이어 기준 가장 먼 적을 선택
+            pool.Sort((a, b) =>
+            {
+                float distA = (a.transform.position - playerPos).sqrMagnitude;
+                float distB = (b.transform.position - playerPos).sqrMagnitude;
+                return distA.CompareTo(distB);
+            });
+            
+            _currentFlanker = pool[pool.Count - 1];
+
+            // 플레이어 기준 우회 방향 결정
+            Vector3 toEnemy = _currentFlanker.transform.position - playerPos;
+            toEnemy.y = 0.0f;
+            float initAngle = Vector3.SignedAngle(playerForward, toEnemy.normalized, Vector3.up);
+            _flankerSign = (initAngle >= 0.0f) ? 1.0f : -1.0f;
+        }
+
+        // 우회 공격자 좌표 계산 및 할당
+        CoordinateCompassFlanker(_currentFlanker, playerPos, playerForward);
+        pool.Remove(_currentFlanker);
+    }
+
+    /// <summary>
+    /// 남은 모든 근접 적을 플레이어 정면 각도에 분산 배치
+    /// </summary>
+    private void AssignRemainingFrontAttackers(List<EnemyController> pool, Vector3 playerPos, Vector3 playerForward)
+    {
+        for (int i = 0; i < pool.Count; i++)
+        {
+            float angle = (pool.Count == 1) ? 0f : ((i % 2 == 0) ? -_frontSpreadAngle : _frontSpreadAngle);
+            AssignFrontSlot(pool[i], playerPos, playerForward, angle);
         }
     }
 
+    /// <summary>
+    /// 플레이어를 중심으로 우회 공격자 좌표를 계산하여 할당
+    /// </summary>
+    /// <param name="flanker">우회 공격자</param>
+    /// <param name="playerPos">플레이어 위치</param>
+    /// <param name="playerForward">플레이어 전방 방향</param>
     private void CoordinateCompassFlanker(EnemyController flanker, Vector3 playerPos, Vector3 playerForward)
     {
         EnemyBlackboard bb = flanker.Blackboard;
         if (bb == null) return;
 
+        // 우회 공격자가 플레이어 측후방에 도달했는지 확인
         float attackRange = bb.EnemyData != null ? bb.EnemyData.AttackRange : 2.0f;
         Vector3 enemyPos = flanker.transform.position;
 
+        // 플레이어와 우회 공격자 사이의 수평 거리 계산
         Vector3 playerToEnemy = enemyPos - playerPos;
-        playerToEnemy.y = 0f;
+        playerToEnemy.y = 0.0f;
         float currentDist = playerToEnemy.magnitude;
 
-        // 사거리 안쪽 진입 시 공격에 집중
+        // 플레이어 기준 우회 공격자의 현재 각도 계산
         if (currentDist <= (attackRange - 0.15f))
         {
             bb.Role = CombatRole.SideAttacker;
@@ -229,30 +322,40 @@ public class CombatManager : LocalSingleton<CombatManager>
 
         bb.Role = CombatRole.SideAttacker;
 
+        // 플레이어 기준 우회 공격자의 현재 각도 계산
         float currentAngle = Vector3.SignedAngle(playerForward, playerToEnemy.normalized, Vector3.up);
-        bool reachedBackAngle = Mathf.Abs(currentAngle) >= 115f;
+        bool reachedBackAngle = Mathf.Abs(currentAngle) >= 115.0f;
 
         Vector3 targetArcPos;
-
+        // 플레이어 기준 우회 공격자가 목표 후방 각도에 도달했으면 최종 후방 좌표 계산
         if (reachedBackAngle)
         {
-            Vector3 finalBackDir = Quaternion.Euler(0f, _flankerSign * _targetBackAngle, 0f) * playerForward;
+            Vector3 finalBackDir = Quaternion.Euler(0.0f, _flankerSign * _targetBackAngle, 0.0f) * playerForward;
             float strikeDist = Mathf.Max(0.5f, attackRange - _rangeOffset);
             targetArcPos = playerPos + (finalBackDir.normalized * strikeDist);
         }
+        // 플레이어 기준 우회 공격자가 목표 후방 각도에 도달하지 않았으면 선회 좌표 계산
         else
         {
             float compassRadius = attackRange + _orbitMargin;
             Vector3 currentRadialDir = playerToEnemy.normalized;
             if (currentRadialDir == Vector3.zero) currentRadialDir = -playerForward;
 
-            Vector3 nextArcDir = Quaternion.Euler(0f, _flankerSign * _orbitStepAngle, 0f) * currentRadialDir;
+            Vector3 nextArcDir = Quaternion.Euler(0.0f, _flankerSign * _orbitStepAngle, 0.0f) * currentRadialDir;
             targetArcPos = playerPos + (nextArcDir.normalized * compassRadius);
         }
 
+        // 우회 공격자 좌표 할당
         bb.SetAssignedPosition(SampleNavMeshPosition(targetArcPos));
     }
 
+    /// <summary>
+    /// 플레이어 정면 좌우 분산 각도에 따라 근접 적 좌표를 계산하여 할당
+    /// </summary>
+    /// <param name="enemy">적</param>
+    /// <param name="playerPos">플레이어 위치</param>
+    /// <param name="playerForward">플레이어 전방 벡터</param>
+    /// <param name="angleOffset">각도 오프셋</param>
     private void AssignFrontSlot(EnemyController enemy, Vector3 playerPos, Vector3 playerForward, float angleOffset)
     {
         EnemyBlackboard bb = enemy.Blackboard;
@@ -260,16 +363,22 @@ public class CombatManager : LocalSingleton<CombatManager>
 
         bb.Role = CombatRole.FrontAttacker;
 
+        // 공격 사거리 기준 진입 거리 계산
         float attackRange = bb.EnemyData != null ? bb.EnemyData.AttackRange : 2.0f;
-        // 정면 적들도 (사거리 - 0.35m) 안쪽으로 확실히 파고들게 설정
         float targetSlotDist = Mathf.Max(0.5f, attackRange - _rangeOffset);
-
-        Vector3 slotDir = Quaternion.Euler(0f, angleOffset, 0f) * playerForward;
+        // 플레이어 기준 좌우 분산 각도에 따라 좌표 계산
+        Vector3 slotDir = Quaternion.Euler(0.0f, angleOffset, 0.0f) * playerForward;
         Vector3 slotPos = playerPos + (slotDir.normalized * targetSlotDist);
 
+        // 플레이어 기준 좌우 분산 각도에 따라 근접 적 좌표 할당
         bb.SetAssignedPosition(SampleNavMeshPosition(slotPos));
     }
 
+    /// <summary>
+    /// NavMesh 상에서 유효한 좌표를 샘플링하여 반환
+    /// </summary>
+    /// <param name="center">중앙 좌표</param>
+    /// <returns></returns>
     private Vector3 SampleNavMeshPosition(Vector3 center)
     {
         if (NavMesh.SamplePosition(center, out NavMeshHit hit, 2.0f, NavMesh.AllAreas))
@@ -279,6 +388,9 @@ public class CombatManager : LocalSingleton<CombatManager>
         return center;
     }
 
+    /// <summary>
+    /// 씬 내 등록된 적들 중 null, 비활성화, 사망한 적들을 제거
+    /// </summary>
     private void CleanUpEnemies()
     {
         for (int i = _registeredEnemies.Count - 1; i >= 0; i--)
@@ -287,6 +399,7 @@ public class CombatManager : LocalSingleton<CombatManager>
             if (enemy == null || !enemy.gameObject.activeInHierarchy || (enemy.Blackboard != null && enemy.Blackboard.IsDead))
             {
                 if (_currentFlanker == enemy) _currentFlanker = null;
+                if (_currentBlocker == enemy) _currentBlocker = null;
                 _registeredEnemies.RemoveAt(i);
             }
         }

@@ -1,8 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 타깃에게 공격을 수행하는 액션 노드 <br/>
-/// 1차 빌드 시각적 피드백을 위해 머터리얼 색상 조절
+/// 타깃에게 근접 공격을 수행하는 액션 노드.
 /// </summary>
 public class BTActionAttack : BTActionNode
 {
@@ -11,13 +10,12 @@ public class BTActionAttack : BTActionNode
     [SerializeField] private Color attackColor = Color.blue;
 
     [Header("Attack Settings")]
-    [Tooltip("공격 지속 시간 (가상 모션 및 피드백 유지 시간)")]
+    [Tooltip("공격 지속 시간")]
     [SerializeField] private float attackDuration = 0.5f;
 
     private EnemyBlackboard enemyBlackboard;
     private MeshRenderer meshRenderer;
     private Color originalColor;
-
     private UnityEngine.AI.NavMeshAgent navAgent;
 
     private float attackEndTime = 0.0f;
@@ -25,15 +23,9 @@ public class BTActionAttack : BTActionNode
 
     public bool IsAttacking => isAttacking;
 
-    private void OnDisable()
-    {
-        ResetAttackState();
-    }
-
     public override void Initialize(BTBlackboard blackboard)
     {
         base.Initialize(blackboard);
-
         enemyBlackboard = blackboard as EnemyBlackboard;
 
         if (enemyBlackboard != null && enemyBlackboard.Owner != null)
@@ -55,25 +47,23 @@ public class BTActionAttack : BTActionNode
             navAgent.isStopped = true;
         }
 
-        // 블랙보드 및 필수 데이터 유효성 검사
         if (enemyBlackboard == null || enemyBlackboard.EnemyData == null)
         {
             ResetAttackState();
             return BTNodeState.Failure;
         }
 
-        // 공격 개시 전 상태 체크
+        // 공격 개시
         if (!isAttacking)
         {
-            // 타깃이 없거나 쿨다운이 덜 풀렸다면 실패 처리
             if (!enemyBlackboard.HasTarget || !enemyBlackboard.IsAttackReady)
             {
                 ResetAttackState();
                 return BTNodeState.Failure;
             }
 
-            // 공격 개시
             isAttacking = true;
+            enemyBlackboard.IsAttacking = true;
             attackEndTime = Time.time + attackDuration;
             SetCapsuleColor(attackColor);
             return BTNodeState.Running;
@@ -90,20 +80,48 @@ public class BTActionAttack : BTActionNode
         return BTNodeState.Success;
     }
 
+    /// <summary>
+    /// 공격 완료
+    /// 공격 상태 초기화 및 쿨다운 설정
+    /// </summary>
     private void FinishAttack()
     {
         SetCapsuleColor(originalColor);
 
-        // 쿨다운 등록
         if (enemyBlackboard.EnemyData != null)
         {
             enemyBlackboard.SetAttackCooldown(enemyBlackboard.EnemyData.AttackCooldown);
         }
 
         isAttacking = false;
+        if (enemyBlackboard != null)
+        {
+            enemyBlackboard.IsAttacking = false;
+        }
         attackEndTime = 0.0f;
     }
 
+    /// <summary>
+    /// 공격 상태 초기화
+    /// </summary>
+    public void ResetAttackState()
+    {
+        if (isAttacking)
+        {
+            SetCapsuleColor(originalColor);
+            isAttacking = false;
+            if (enemyBlackboard != null)
+            {
+                enemyBlackboard.IsAttacking = false;
+            }
+            attackEndTime = 0.0f;
+        }
+    }
+
+    /// <summary>
+    /// 캡슐 색상 변경
+    /// </summary>
+    /// <param name="color">변경할 색</param>
     private void SetCapsuleColor(Color color)
     {
         if (meshRenderer != null)
@@ -112,13 +130,8 @@ public class BTActionAttack : BTActionNode
         }
     }
 
-    public void ResetAttackState()
+    private void OnDisable()
     {
-        if (isAttacking)
-        {
-            SetCapsuleColor(originalColor);
-            isAttacking = false;
-            attackEndTime = 0.0f;
-        }
+        ResetAttackState();
     }
 }
