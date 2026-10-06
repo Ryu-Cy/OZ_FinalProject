@@ -14,9 +14,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/_Project/00. Scenes/Main/MainGame.unity
     guid: ebb937d30022af543b461b9daaf51412
-  - enabled: 1
+  - enabled: 0
     path: Assets/_Project/00. Scenes/Test/AI_EnemyBase.unity
     guid: 93b8e678c7cfcf74db72db3ac8428b41
+  - enabled: 1
+    path: Assets/_Project/00. Scenes/Test/Player_UI.unity
+    guid: cf1f5ef1b2371c943abd54b6a818eed2
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
