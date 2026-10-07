@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 317b3864f94547e47a6751dee9dd037e, type: 3}
+  m_Name: Player_Test_Data
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerData
+  characterName: Character
+  maxHealth: 100
+  baseAttackPower: 10
+  baseDefense: 10
+  moveSpeed: 3
+  rotationSpeed: 360
+  maxStamina: 100
+  staminaRecoveryRate: 20
+  staminaRecoveryDelay: 1
+  sprintSpeed: 6.5
+  dodgeStaminaCost: 20
+  sprintStaminaCostPerSecond: 15

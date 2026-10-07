@@ -2,8 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 피격 시 본을 회전시켜 반응하는 클래스 <br/>
-/// 아직 적 애니메이션 적용 전이라 애니메이션 적용 후에 수정될 가능성 높음.
+/// 피격 시 본을 회전시켜 반응하는 클래스
 /// </summary>
 public class HitReaction : MonoBehaviour
 {

@@ -5,22 +5,13 @@ using UnityEngine;
 /// </summary>
 public class BTActionAttack : BTActionNode
 {
-    [Header("Visual Settings")]
-    [Tooltip("공격 시 변경할 머티리얼 색상")]
-    [SerializeField] private Color attackColor = Color.blue;
-
-    [Header("Attack Settings")]
-    [Tooltip("공격 지속 시간")]
-    [SerializeField] private float attackDuration = 0.5f;
-
     private EnemyBlackboard enemyBlackboard;
-    private MeshRenderer meshRenderer;
-    private Color originalColor;
+    private EnemyController enemyController;
     private UnityEngine.AI.NavMeshAgent navAgent;
 
-    private float attackEndTime = 0.0f;
     private bool isAttacking = false;
 
+    // 프로퍼티
     public bool IsAttacking => isAttacking;
 
     public override void Initialize(BTBlackboard blackboard)
@@ -30,24 +21,21 @@ public class BTActionAttack : BTActionNode
 
         if (enemyBlackboard != null && enemyBlackboard.Owner != null)
         {
+            enemyController = enemyBlackboard.Owner.GetComponent<EnemyController>();
             navAgent = enemyBlackboard.Owner.GetComponent<UnityEngine.AI.NavMeshAgent>();
-            meshRenderer = enemyBlackboard.Owner.GetComponentInChildren<MeshRenderer>();
-            if (meshRenderer != null)
-            {
-                originalColor = meshRenderer.material.color;
-            }
         }
     }
 
     protected override BTNodeState ExecuteAction()
     {
+        // 공격 중 이동 정지
         if (navAgent != null && navAgent.isOnNavMesh)
         {
             navAgent.velocity = Vector3.zero;
             navAgent.isStopped = true;
         }
 
-        if (enemyBlackboard == null || enemyBlackboard.EnemyData == null)
+        if (enemyBlackboard == null || enemyBlackboard.EnemyData == null || enemyController == null)
         {
             ResetAttackState();
             return BTNodeState.Failure;
@@ -64,31 +52,47 @@ public class BTActionAttack : BTActionNode
 
             isAttacking = true;
             enemyBlackboard.IsAttacking = true;
-            attackEndTime = Time.time + attackDuration;
-            SetCapsuleColor(attackColor);
+
+            // 이전 공격 플래그 리셋 및 애니메이션 트리거 발동
+            enemyController.ResetAttackState();
+            enemyController.TriggerAttackAnimation();
+
             return BTNodeState.Running;
         }
 
         // 공격 진행 중
-        if (Time.time < attackEndTime)
+        if (enemyBlackboard.Target != null)
         {
-            return BTNodeState.Running;
+            Vector3 direction = (enemyBlackboard.Target.position - enemyController.transform.position).normalized;
+            direction.y = 0;
+            if (direction != Vector3.zero)
+            {
+                Quaternion lookRotation = Quaternion.LookRotation(direction);
+                enemyController.transform.rotation = Quaternion.Slerp(
+                    enemyController.transform.rotation,
+                    lookRotation,
+                    Time.deltaTime * 6f
+                );
+            }
         }
 
-        // 공격 완료
-        FinishAttack();
-        return BTNodeState.Success;
+        // 애니메이션 클립의 AttackFinished 이벤트 수신 확인
+        if (enemyController.IsAttackFinished())
+        {
+            FinishAttack();
+            return BTNodeState.Success;
+        }
+
+        // 아직 애니메이션 동작 중
+        return BTNodeState.Running;
     }
 
     /// <summary>
-    /// 공격 완료
-    /// 공격 상태 초기화 및 쿨다운 설정
+    /// 공격 완료 처리
     /// </summary>
     private void FinishAttack()
     {
-        SetCapsuleColor(originalColor);
-
-        if (enemyBlackboard.EnemyData != null)
+        if (enemyBlackboard != null && enemyBlackboard.EnemyData != null)
         {
             enemyBlackboard.SetAttackCooldown(enemyBlackboard.EnemyData.AttackCooldown);
         }
@@ -98,35 +102,26 @@ public class BTActionAttack : BTActionNode
         {
             enemyBlackboard.IsAttacking = false;
         }
-        attackEndTime = 0.0f;
     }
 
     /// <summary>
-    /// 공격 상태 초기화
+    /// 외부 요인이나 취소 시 공격 상태 초기화
     /// </summary>
     public void ResetAttackState()
     {
         if (isAttacking)
         {
-            SetCapsuleColor(originalColor);
             isAttacking = false;
+
             if (enemyBlackboard != null)
             {
                 enemyBlackboard.IsAttacking = false;
             }
-            attackEndTime = 0.0f;
-        }
-    }
 
-    /// <summary>
-    /// 캡슐 색상 변경
-    /// </summary>
-    /// <param name="color">변경할 색</param>
-    private void SetCapsuleColor(Color color)
-    {
-        if (meshRenderer != null)
-        {
-            meshRenderer.material.color = color;
+            if (enemyController != null)
+            {
+                enemyController.ResetAttackState();
+            }
         }
     }
 

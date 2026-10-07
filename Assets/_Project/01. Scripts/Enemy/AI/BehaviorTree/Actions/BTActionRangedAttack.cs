@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// 진입 즉시 풀에서 탄환을 꺼내 발사, 후딜레이 동안 정지 후 쿨다운을 적용하는 원거리 공격 노드.
+/// 애니메이션 이벤트 타이밍에 투사체를 풀에서 꺼내 발사하고 모션 완료 시 Success를 반환하는 원거리 공격 노드.
 /// </summary>
 public class BTActionRangedAttack : BTActionNode
 {
@@ -13,21 +13,13 @@ public class BTActionRangedAttack : BTActionNode
     [Tooltip("탄환 발사 위치")]
     [SerializeField] private Transform firePoint;
 
-    [Header("Timing")]
-    [Tooltip("공격 후딜레이 지속 시간(초)")]
-    [SerializeField] private float attackDuration = 1.0f;
-
-    [Header("Visual Feedback")]
-    [Tooltip("공격 중 표시할 머티리얼 색상")]
-    [SerializeField] private Color castingColor = Color.magenta;
-
     private EnemyBlackboard enemyBlackboard;
+    private EnemyController enemyController;
+    private EnemyAnimationEventController animEventController;
     private NavMeshAgent navAgent;
-    private MeshRenderer meshRenderer;
-    private Color originalColor;
 
-    private float attackStartTime;
     private bool isAttacking = false;
+    private bool hasShot = false;
 
     public bool IsAttacking => isAttacking;
 
@@ -38,37 +30,46 @@ public class BTActionRangedAttack : BTActionNode
 
         if (enemyBlackboard?.Owner != null)
         {
+            enemyController = enemyBlackboard.Owner.GetComponent<EnemyController>();
+            animEventController = enemyBlackboard.Owner.GetComponentInChildren<EnemyAnimationEventController>();
             navAgent = enemyBlackboard.Owner.GetComponent<NavMeshAgent>();
-            meshRenderer = enemyBlackboard.Owner.GetComponentInChildren<MeshRenderer>();
-            if (meshRenderer != null)
-            {
-                originalColor = meshRenderer.material.color;
-            }
 
-            if (ObjectPoolManager.HasInstance && bulletPrefab != null)
-            {
-                ObjectPoolManager.Instance.RegisterPool(enemyBlackboard.Owner.gameObject, bulletPrefab, 3);
-            }
+            TryRegisterBulletPool();
+        }
+    }
+
+    private void Start()
+    {
+        TryRegisterBulletPool();
+    }
+
+    /// <summary>
+    /// 탄환 풀 등록.
+    /// </summary>
+    private void TryRegisterBulletPool()
+    {
+        if (ObjectPoolManager.HasInstance && bulletPrefab != null && enemyBlackboard?.Owner != null)
+        {
+            ObjectPoolManager.Instance.RegisterPool(enemyBlackboard.Owner.gameObject, bulletPrefab, 3);
         }
     }
 
     protected override BTNodeState ExecuteAction()
     {
-        // 이동 정지 및 트랜스폼-내비메시 강제 동기화 유지
+        // 공격 중 이동 정지
         if (navAgent != null && navAgent.isOnNavMesh)
         {
-            navAgent.updatePosition = true;
             navAgent.velocity = Vector3.zero;
             navAgent.isStopped = true;
         }
 
-        if (enemyBlackboard == null || enemyBlackboard.EnemyData == null || !enemyBlackboard.HasTarget)
+        if (enemyBlackboard == null || enemyBlackboard.EnemyData == null || !enemyBlackboard.HasTarget || enemyController == null)
         {
             ResetAttackState();
             return BTNodeState.Failure;
         }
 
-        // 공격 시작
+        // 공격 개시
         if (!isAttacking)
         {
             if (!enemyBlackboard.IsAttackReady)
@@ -78,44 +79,58 @@ public class BTActionRangedAttack : BTActionNode
             }
 
             isAttacking = true;
+            hasShot = false;
             enemyBlackboard.IsAttacking = true;
-            attackStartTime = Time.time;
-            SetRendererColor(castingColor);
 
-            ShootBullet();
+            enemyController.ResetAttackState();
+            enemyController.TriggerAttackAnimation();
 
             return BTNodeState.Running;
         }
 
-        // 후딜레이 모션 완료 대기
-        float elapsed = Time.time - attackStartTime;
-        if (elapsed < attackDuration)
+        // 애니메이션의 발사 이벤트 타이밍 감지
+        if (!hasShot && animEventController != null && animEventController.IsShootTriggered)
         {
-            return BTNodeState.Running;
+            ShootBullet();
+            hasShot = true;
         }
 
-        // 공격 종료 처리
-        FinishAttack();
-        return BTNodeState.Success;
+        // 모션 완료 대기
+        if (enemyController.IsAttackFinished())
+        {
+            if (!hasShot)
+            {
+                ShootBullet();
+                hasShot = true;
+            }
+
+            FinishAttack();
+            return BTNodeState.Success;
+        }
+
+        return BTNodeState.Running;
     }
 
     /// <summary>
-    /// 투사체를 풀에서 꺼내 발사
+    /// 탄환을 풀에서 꺼내 발사.
     /// </summary>
     private void ShootBullet()
     {
-        if (ObjectPoolManager.Instance == null || enemyBlackboard.Target == null) return;
+        if (enemyBlackboard == null || enemyBlackboard.Target == null || enemyBlackboard.Owner == null) return;
 
-        // 발사 위치와 방향 계산
+        TryRegisterBulletPool();
+
+        if (ObjectPoolManager.Instance == null) return;
+
+        // 탄환 발사 위치와 방향 계산
         Vector3 spawnPos = firePoint != null
             ? firePoint.position
             : enemyBlackboard.Owner.position + Vector3.up * 1.3f;
 
-        // 목표 위치를 약간 위로 조정하여 발사 방향 계산
         Vector3 targetAimPos = enemyBlackboard.Target.position + Vector3.up * 1.0f;
         Vector3 fireDir = (targetAimPos - spawnPos).normalized;
 
-        // 풀에서 탄환을 꺼내 발사
+        // 탄환 풀에서 꺼내 발사
         EnemyBullet bullet = ObjectPoolManager.Instance.Spawn<EnemyBullet>(enemyBlackboard.Owner.gameObject);
         if (bullet != null)
         {
@@ -124,18 +139,17 @@ public class BTActionRangedAttack : BTActionNode
     }
 
     /// <summary>
-    /// 공격 종료 후 상태 초기화 및 쿨다운을 적용합니다.
+    /// 공격 완료 처리
     /// </summary>
     private void FinishAttack()
     {
-        SetRendererColor(originalColor);
-
         if (enemyBlackboard.EnemyData != null)
         {
             enemyBlackboard.SetAttackCooldown(enemyBlackboard.EnemyData.AttackCooldown);
         }
 
         isAttacking = false;
+        hasShot = false;
         if (enemyBlackboard != null)
         {
             enemyBlackboard.IsAttacking = false;
@@ -143,30 +157,22 @@ public class BTActionRangedAttack : BTActionNode
     }
 
     /// <summary>
-    /// 공격 상태 및 시각적 피드백 초기화
+    /// 공격 상태 초기화
     /// </summary>
     public void ResetAttackState()
     {
         if (isAttacking)
         {
-            SetRendererColor(originalColor);
             isAttacking = false;
+            hasShot = false;
             if (enemyBlackboard != null)
             {
                 enemyBlackboard.IsAttacking = false;
             }
-        }
-    }
-
-    /// <summary>
-    /// 색상 변환
-    /// </summary>
-    /// <param name="color">변경할 색상</param>
-    private void SetRendererColor(Color color)
-    {
-        if (meshRenderer != null)
-        {
-            meshRenderer.material.color = color;
+            if (enemyController != null)
+            {
+                enemyController.ResetAttackState();
+            }
         }
     }
 

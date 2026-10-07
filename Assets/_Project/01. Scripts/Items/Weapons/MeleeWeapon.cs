@@ -24,6 +24,10 @@ public class MeleeWeapon : MonoBehaviour
         DisableAttack();
     }
 
+    /// <summary>
+    /// 공격 활성화
+    /// 공격 시작 시 호출하여 콜라이더를 활성화 및 이전 타격 대상 초기화
+    /// </summary>
     public void EnableAttack()
     {
         hitTargets.Clear();
@@ -34,6 +38,10 @@ public class MeleeWeapon : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 공격 비활성화
+    /// 공격 종료 시 호출하여 콜라이더를 비활성화 및 타격 대상 기록을 초기화
+    /// </summary>
     public void DisableAttack()
     {
         if (hitCollider != null)

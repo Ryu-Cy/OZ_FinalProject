@@ -2,9 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// 발사 시 일직선으로 날아가며, 지정된 충돌 레이어와 부딪히거나 수명 만료 시 ObjectPoolManager로 반환되는 탄환
+/// 자식 오브젝트에 Collider와 Rigidbody가 있어도 자동으로 감지하여 초기화합니다.
 /// </summary>
-[RequireComponent(typeof(Collider))]
-[RequireComponent(typeof(Rigidbody))]
 public class EnemyBullet : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -15,7 +14,7 @@ public class EnemyBullet : MonoBehaviour
     [SerializeField] private float lifeTime = 5.0f;
 
     [Header("Collision Filter")]
-    [Tooltip("충돌을 감지할 대상 레이어")]
+    [Tooltip("충돌을 감지할 대상 레이어 (Player, Obstacle 등)")]
     [SerializeField] private LayerMask collisionLayer;
 
     private Rigidbody rb;
@@ -28,12 +27,19 @@ public class EnemyBullet : MonoBehaviour
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-        bulletCollider = GetComponent<Collider>();
+        rb = GetComponentInChildren<Rigidbody>();
+        bulletCollider = GetComponentInChildren<Collider>();
 
-        rb.useGravity = false;
-        rb.isKinematic = true;
-        bulletCollider.isTrigger = true;
+        if (rb != null)
+        {
+            rb.useGravity = false;
+            rb.isKinematic = true;
+        }
+
+        if (bulletCollider != null)
+        {
+            bulletCollider.isTrigger = true;
+        }
     }
 
     /// <summary>
@@ -42,7 +48,10 @@ public class EnemyBullet : MonoBehaviour
     public void Fire(Vector3 spawnPosition, Vector3 direction, float damageAmount, GameObject ownerObject)
     {
         transform.position = spawnPosition;
-        transform.forward = direction.normalized;
+        if (direction != Vector3.zero)
+        {
+            transform.forward = direction.normalized;
+        }
 
         owner = ownerObject;
         damage = damageAmount;
@@ -56,10 +65,23 @@ public class EnemyBullet : MonoBehaviour
     {
         if (!isLaunched) return;
 
-        // 전방을 향해 직선 이동
-        transform.position += transform.forward * (speed * Time.deltaTime);
+        float moveStep = speed * Time.deltaTime;
 
-        // 수명 검사
+        // 고속 비행 시 충돌 누락(터널링) 방지 레이캐스트
+        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, moveStep, collisionLayer))
+        {
+            // 발사자 본인 및 자식 제외
+            if (owner == null || (!hit.collider.gameObject.Equals(owner) && !hit.transform.IsChildOf(owner.transform)))
+            {
+                ProcessHit(hit.collider, hit.point);
+                return;
+            }
+        }
+
+        // 전방 직선 이동
+        transform.position += transform.forward * moveStep;
+
+        // 수명 만료 검사
         timer += Time.deltaTime;
         if (timer >= lifeTime)
         {
@@ -77,16 +99,28 @@ public class EnemyBullet : MonoBehaviour
             return;
         }
 
-        // 지정된 충돌 레이어에 포함되지 않은 대상은 무시
+        // 충돌 대상 레이어 필터링
         if (((1 << other.gameObject.layer) & collisionLayer.value) == 0)
         {
             return;
         }
 
-        // IDamageable 인터페이스 대상 대미지 판정
+        Vector3 hitPoint = other.ClosestPoint(transform.position);
+        ProcessHit(other, hitPoint);
+    }
+
+    /// <summary>
+    /// 충돌 처리 및 대미지 전달
+    /// </summary>
+    /// <param name="other">충돌한 콜라이더</param>
+    /// <param name="hitPoint">충돌 지점</param>
+    private void ProcessHit(Collider other, Vector3 hitPoint)
+    {
+        if (!isLaunched) return;
+
+        // 대미지 전달
         if (other.TryGetComponent<IDamageable>(out var damageable))
         {
-            Vector3 hitPoint = other.ClosestPoint(transform.position);
             DamageInfo damageInfo = new DamageInfo(
                 damage,
                 hitPoint,
@@ -98,7 +132,6 @@ public class EnemyBullet : MonoBehaviour
             damageable.TakeDamage(damageInfo);
         }
 
-        // 충돌 대상에 닿았으므로 회수
         Despawn();
     }
 

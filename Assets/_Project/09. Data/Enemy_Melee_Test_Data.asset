@@ -27,7 +27,7 @@ MonoBehaviour:
   _obstacleLayer:
     serializedVersion: 2
     m_Bits: 0
-  _attackRange: 2
+  _attackRange: 1.8
   _attackCooldown: 2.5
   _chaseSpeed: 4.5
   _targetMemoryDuration: 4

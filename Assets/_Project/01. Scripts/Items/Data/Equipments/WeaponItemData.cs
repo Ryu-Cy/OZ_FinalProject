@@ -9,8 +9,12 @@ public class WeaponItemData : EquipmentItemData
     [Header("무기 전투 스탯")]
     [SerializeField] private int attackPower;
 
+    [Tooltip("이 무기로 공격할 때 1회당 소모되는 스태미나")]
+    [SerializeField] private float attackStaminaCost = 15.0f;
+
     // 프로퍼티
-    public int AttackPower => attackPower;
+    public int AttackPower => attackPower; 
+    public float AttackStaminaCost => attackStaminaCost;
 
     public override void Equip(GameObject user)
     {
